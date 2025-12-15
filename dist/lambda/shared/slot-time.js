@@ -1,0 +1,29 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.calculateSlotTime = calculateSlotTime;
+/**
+ * Calculates slot time by truncating timestamp to nearest 5-second boundary
+ *
+ * Requirements: 4.1, 4.2, 4.3
+ * - Truncates seconds to nearest multiple of 5
+ * - Preserves boundary values (e.g., 05, 10, 15 remain unchanged)
+ * - Returns ISO8601 format with second precision (YYYY-MM-DDTHH:mm:ssZ)
+ *
+ * @param timestamp - Any Date object
+ * @returns ISO8601 string with seconds truncated to 5-second boundary
+ *
+ * @example
+ * calculateSlotTime(new Date('2025-12-02T10:23:07Z')) // "2025-12-02T10:23:05Z"
+ * calculateSlotTime(new Date('2025-12-02T10:23:05Z')) // "2025-12-02T10:23:05Z"
+ * calculateSlotTime(new Date('2025-12-02T10:23:13Z')) // "2025-12-02T10:23:10Z"
+ */
+function calculateSlotTime(timestamp) {
+    const seconds = timestamp.getUTCSeconds();
+    const truncatedSeconds = Math.floor(seconds / 5) * 5;
+    // Create new date with truncated seconds and zero milliseconds
+    const slotDate = new Date(timestamp);
+    slotDate.setUTCSeconds(truncatedSeconds, 0);
+    // Return ISO8601 string
+    return slotDate.toISOString();
+}
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoic2xvdC10aW1lLmpzIiwic291cmNlUm9vdCI6IiIsInNvdXJjZXMiOlsiLi4vLi4vLi4vbGFtYmRhL3NoYXJlZC9zbG90LXRpbWUudHMiXSwibmFtZXMiOltdLCJtYXBwaW5ncyI6Ijs7QUFnQkEsOENBVUM7QUExQkQ7Ozs7Ozs7Ozs7Ozs7OztHQWVHO0FBQ0gsU0FBZ0IsaUJBQWlCLENBQUMsU0FBZTtJQUM3QyxNQUFNLE9BQU8sR0FBRyxTQUFTLENBQUMsYUFBYSxFQUFFLENBQUM7SUFDMUMsTUFBTSxnQkFBZ0IsR0FBRyxJQUFJLENBQUMsS0FBSyxDQUFDLE9BQU8sR0FBRyxDQUFDLENBQUMsR0FBRyxDQUFDLENBQUM7SUFFckQsK0RBQStEO0lBQy9ELE1BQU0sUUFBUSxHQUFHLElBQUksSUFBSSxDQUFDLFNBQVMsQ0FBQyxDQUFDO0lBQ3JDLFFBQVEsQ0FBQyxhQUFhLENBQUMsZ0JBQWdCLEVBQUUsQ0FBQyxDQUFDLENBQUM7SUFFNUMsd0JBQXdCO0lBQ3hCLE9BQU8sUUFBUSxDQUFDLFdBQVcsRUFBRSxDQUFDO0FBQ2xDLENBQUMiLCJzb3VyY2VzQ29udGVudCI6WyIvKipcclxuICogQ2FsY3VsYXRlcyBzbG90IHRpbWUgYnkgdHJ1bmNhdGluZyB0aW1lc3RhbXAgdG8gbmVhcmVzdCA1LXNlY29uZCBib3VuZGFyeVxyXG4gKiBcclxuICogUmVxdWlyZW1lbnRzOiA0LjEsIDQuMiwgNC4zXHJcbiAqIC0gVHJ1bmNhdGVzIHNlY29uZHMgdG8gbmVhcmVzdCBtdWx0aXBsZSBvZiA1XHJcbiAqIC0gUHJlc2VydmVzIGJvdW5kYXJ5IHZhbHVlcyAoZS5nLiwgMDUsIDEwLCAxNSByZW1haW4gdW5jaGFuZ2VkKVxyXG4gKiAtIFJldHVybnMgSVNPODYwMSBmb3JtYXQgd2l0aCBzZWNvbmQgcHJlY2lzaW9uIChZWVlZLU1NLUREVEhIOm1tOnNzWilcclxuICogXHJcbiAqIEBwYXJhbSB0aW1lc3RhbXAgLSBBbnkgRGF0ZSBvYmplY3RcclxuICogQHJldHVybnMgSVNPODYwMSBzdHJpbmcgd2l0aCBzZWNvbmRzIHRydW5jYXRlZCB0byA1LXNlY29uZCBib3VuZGFyeVxyXG4gKiBcclxuICogQGV4YW1wbGVcclxuICogY2FsY3VsYXRlU2xvdFRpbWUobmV3IERhdGUoJzIwMjUtMTItMDJUMTA6MjM6MDdaJykpIC8vIFwiMjAyNS0xMi0wMlQxMDoyMzowNVpcIlxyXG4gKiBjYWxjdWxhdGVTbG90VGltZShuZXcgRGF0ZSgnMjAyNS0xMi0wMlQxMDoyMzowNVonKSkgLy8gXCIyMDI1LTEyLTAyVDEwOjIzOjA1WlwiXHJcbiAqIGNhbGN1bGF0ZVNsb3RUaW1lKG5ldyBEYXRlKCcyMDI1LTEyLTAyVDEwOjIzOjEzWicpKSAvLyBcIjIwMjUtMTItMDJUMTA6MjM6MTBaXCJcclxuICovXHJcbmV4cG9ydCBmdW5jdGlvbiBjYWxjdWxhdGVTbG90VGltZSh0aW1lc3RhbXA6IERhdGUpOiBzdHJpbmcge1xyXG4gICAgY29uc3Qgc2Vjb25kcyA9IHRpbWVzdGFtcC5nZXRVVENTZWNvbmRzKCk7XHJcbiAgICBjb25zdCB0cnVuY2F0ZWRTZWNvbmRzID0gTWF0aC5mbG9vcihzZWNvbmRzIC8gNSkgKiA1O1xyXG5cclxuICAgIC8vIENyZWF0ZSBuZXcgZGF0ZSB3aXRoIHRydW5jYXRlZCBzZWNvbmRzIGFuZCB6ZXJvIG1pbGxpc2Vjb25kc1xyXG4gICAgY29uc3Qgc2xvdERhdGUgPSBuZXcgRGF0ZSh0aW1lc3RhbXApO1xyXG4gICAgc2xvdERhdGUuc2V0VVRDU2Vjb25kcyh0cnVuY2F0ZWRTZWNvbmRzLCAwKTtcclxuXHJcbiAgICAvLyBSZXR1cm4gSVNPODYwMSBzdHJpbmdcclxuICAgIHJldHVybiBzbG90RGF0ZS50b0lTT1N0cmluZygpO1xyXG59XHJcbiJdfQ==

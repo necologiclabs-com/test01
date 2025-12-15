@@ -1,0 +1,59 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.buildApiUrl = buildApiUrl;
+exports.fetchResponseCount = fetchResponseCount;
+/**
+ * Builds the API URL with ISO8601 formatted query parameters
+ *
+ * Requirements: 2.2
+ *
+ * @param baseUrl - Base URL of the AI Employee API
+ * @param from - ISO8601 timestamp (start of time window)
+ * @param to - ISO8601 timestamp (end of time window)
+ * @returns Complete URL with query parameters
+ */
+function buildApiUrl(baseUrl, from, to) {
+    // Ensure baseUrl doesn't end with a slash
+    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    // Build URL with ISO8601 query parameters
+    const url = `${cleanBaseUrl}/response_count?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`;
+    return url;
+}
+/**
+ * Fetches response count from AI Employee API
+ *
+ * Requirements: 2.1, 2.2, 2.3
+ *
+ * @param config - API client configuration
+ * @param timeWindow - Time window from SQS message
+ * @returns API response with from, to, and count
+ * @throws Error if API call fails or returns invalid response
+ */
+async function fetchResponseCount(config, timeWindow) {
+    const url = buildApiUrl(config.baseUrl, timeWindow.from, timeWindow.to);
+    console.log('Calling AI Employee API', { url, from: timeWindow.from, to: timeWindow.to });
+    try {
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`API returned status ${response.status}: ${response.statusText}`);
+        }
+        const data = await response.json();
+        // Validate response structure (Requirement 2.3)
+        if (!data.from || !data.to || typeof data.count !== 'number') {
+            throw new Error('Invalid API response structure: missing from, to, or count fields');
+        }
+        console.log('API response received', { from: data.from, to: data.to, count: data.count });
+        return data;
+    }
+    catch (error) {
+        // Requirement 7.1: Log error details and re-throw
+        console.error('Failed to fetch response count from API', {
+            url,
+            from: timeWindow.from,
+            to: timeWindow.to,
+            error: error instanceof Error ? error.message : String(error),
+        });
+        throw error;
+    }
+}
+//# sourceMappingURL=data:application/json;base64,eyJ2ZXJzaW9uIjozLCJmaWxlIjoiYXBpLWNsaWVudC5qcyIsInNvdXJjZVJvb3QiOiIiLCJzb3VyY2VzIjpbIi4uLy4uLy4uL2xhbWJkYS9jb2xsZWN0b3IvYXBpLWNsaWVudC50cyJdLCJuYW1lcyI6W10sIm1hcHBpbmdzIjoiOztBQW9CQSxrQ0FRQztBQVlELGdEQW9DQztBQWxFRDs7Ozs7Ozs7O0dBU0c7QUFDSCxTQUFnQixXQUFXLENBQUMsT0FBZSxFQUFFLElBQVksRUFBRSxFQUFVO0lBQ2pFLDBDQUEwQztJQUMxQyxNQUFNLFlBQVksR0FBRyxPQUFPLENBQUMsUUFBUSxDQUFDLEdBQUcsQ0FBQyxDQUFDLENBQUMsQ0FBQyxPQUFPLENBQUMsS0FBSyxDQUFDLENBQUMsRUFBRSxDQUFDLENBQUMsQ0FBQyxDQUFDLENBQUMsQ0FBQyxPQUFPLENBQUM7SUFFNUUsMENBQTBDO0lBQzFDLE1BQU0sR0FBRyxHQUFHLEdBQUcsWUFBWSx3QkFBd0Isa0JBQWtCLENBQUMsSUFBSSxDQUFDLE9BQU8sa0JBQWtCLENBQUMsRUFBRSxDQUFDLEVBQUUsQ0FBQztJQUUzRyxPQUFPLEdBQUcsQ0FBQztBQUNmLENBQUM7QUFFRDs7Ozs7Ozs7O0dBU0c7QUFDSSxLQUFLLFVBQVUsa0JBQWtCLENBQ3BDLE1BQXVCLEVBQ3ZCLFVBQTJCO0lBRTNCLE1BQU0sR0FBRyxHQUFHLFdBQVcsQ0FBQyxNQUFNLENBQUMsT0FBTyxFQUFFLFVBQVUsQ0FBQyxJQUFJLEVBQUUsVUFBVSxDQUFDLEVBQUUsQ0FBQyxDQUFDO0lBRXhFLE9BQU8sQ0FBQyxHQUFHLENBQUMseUJBQXlCLEVBQUUsRUFBRSxHQUFHLEVBQUUsSUFBSSxFQUFFLFVBQVUsQ0FBQyxJQUFJLEVBQUUsRUFBRSxFQUFFLFVBQVUsQ0FBQyxFQUFFLEVBQUUsQ0FBQyxDQUFDO0lBRTFGLElBQUksQ0FBQztRQUNELE1BQU0sUUFBUSxHQUFHLE1BQU0sS0FBSyxDQUFDLEdBQUcsQ0FBQyxDQUFDO1FBRWxDLElBQUksQ0FBQyxRQUFRLENBQUMsRUFBRSxFQUFFLENBQUM7WUFDZixNQUFNLElBQUksS0FBSyxDQUFDLHVCQUF1QixRQUFRLENBQUMsTUFBTSxLQUFLLFFBQVEsQ0FBQyxVQUFVLEVBQUUsQ0FBQyxDQUFDO1FBQ3RGLENBQUM7UUFFRCxNQUFNLElBQUksR0FBRyxNQUFNLFFBQVEsQ0FBQyxJQUFJLEVBQWlCLENBQUM7UUFFbEQsZ0RBQWdEO1FBQ2hELElBQUksQ0FBQyxJQUFJLENBQUMsSUFBSSxJQUFJLENBQUMsSUFBSSxDQUFDLEVBQUUsSUFBSSxPQUFPLElBQUksQ0FBQyxLQUFLLEtBQUssUUFBUSxFQUFFLENBQUM7WUFDM0QsTUFBTSxJQUFJLEtBQUssQ0FBQyxtRUFBbUUsQ0FBQyxDQUFDO1FBQ3pGLENBQUM7UUFFRCxPQUFPLENBQUMsR0FBRyxDQUFDLHVCQUF1QixFQUFFLEVBQUUsSUFBSSxFQUFFLElBQUksQ0FBQyxJQUFJLEVBQUUsRUFBRSxFQUFFLElBQUksQ0FBQyxFQUFFLEVBQUUsS0FBSyxFQUFFLElBQUksQ0FBQyxLQUFLLEVBQUUsQ0FBQyxDQUFDO1FBRTFGLE9BQU8sSUFBSSxDQUFDO0lBQ2hCLENBQUM7SUFBQyxPQUFPLEtBQUssRUFBRSxDQUFDO1FBQ2Isa0RBQWtEO1FBQ2xELE9BQU8sQ0FBQyxLQUFLLENBQUMseUNBQXlDLEVBQUU7WUFDckQsR0FBRztZQUNILElBQUksRUFBRSxVQUFVLENBQUMsSUFBSTtZQUNyQixFQUFFLEVBQUUsVUFBVSxDQUFDLEVBQUU7WUFDakIsS0FBSyxFQUFFLEtBQUssWUFBWSxLQUFLLENBQUMsQ0FBQyxDQUFDLEtBQUssQ0FBQyxPQUFPLENBQUMsQ0FBQyxDQUFDLE1BQU0sQ0FBQyxLQUFLLENBQUM7U0FDaEUsQ0FBQyxDQUFDO1FBRUgsTUFBTSxLQUFLLENBQUM7SUFDaEIsQ0FBQztBQUNMLENBQUMiLCJzb3VyY2VzQ29udGVudCI6WyJpbXBvcnQgeyBTY2hlZHVsZU1lc3NhZ2UsIEFwaVJlc3BvbnNlIH0gZnJvbSAnLi4vc2hhcmVkL3R5cGVzJztcclxuXHJcbi8qKlxyXG4gKiBBUEkgQ2xpZW50IENvbmZpZ3VyYXRpb25cclxuICogUmVxdWlyZW1lbnRzOiAyLjEsIDIuMiwgMi4zXHJcbiAqL1xyXG5leHBvcnQgaW50ZXJmYWNlIEFwaUNsaWVudENvbmZpZyB7XHJcbiAgICBiYXNlVXJsOiBzdHJpbmc7IC8vIEFJX0FQSV9CQVNFX1VSTCBlbnZpcm9ubWVudCB2YXJpYWJsZVxyXG59XHJcblxyXG4vKipcclxuICogQnVpbGRzIHRoZSBBUEkgVVJMIHdpdGggSVNPODYwMSBmb3JtYXR0ZWQgcXVlcnkgcGFyYW1ldGVyc1xyXG4gKiBcclxuICogUmVxdWlyZW1lbnRzOiAyLjJcclxuICogXHJcbiAqIEBwYXJhbSBiYXNlVXJsIC0gQmFzZSBVUkwgb2YgdGhlIEFJIEVtcGxveWVlIEFQSVxyXG4gKiBAcGFyYW0gZnJvbSAtIElTTzg2MDEgdGltZXN0YW1wIChzdGFydCBvZiB0aW1lIHdpbmRvdylcclxuICogQHBhcmFtIHRvIC0gSVNPODYwMSB0aW1lc3RhbXAgKGVuZCBvZiB0aW1lIHdpbmRvdylcclxuICogQHJldHVybnMgQ29tcGxldGUgVVJMIHdpdGggcXVlcnkgcGFyYW1ldGVyc1xyXG4gKi9cclxuZXhwb3J0IGZ1bmN0aW9uIGJ1aWxkQXBpVXJsKGJhc2VVcmw6IHN0cmluZywgZnJvbTogc3RyaW5nLCB0bzogc3RyaW5nKTogc3RyaW5nIHtcclxuICAgIC8vIEVuc3VyZSBiYXNlVXJsIGRvZXNuJ3QgZW5kIHdpdGggYSBzbGFzaFxyXG4gICAgY29uc3QgY2xlYW5CYXNlVXJsID0gYmFzZVVybC5lbmRzV2l0aCgnLycpID8gYmFzZVVybC5zbGljZSgwLCAtMSkgOiBiYXNlVXJsO1xyXG5cclxuICAgIC8vIEJ1aWxkIFVSTCB3aXRoIElTTzg2MDEgcXVlcnkgcGFyYW1ldGVyc1xyXG4gICAgY29uc3QgdXJsID0gYCR7Y2xlYW5CYXNlVXJsfS9yZXNwb25zZV9jb3VudD9mcm9tPSR7ZW5jb2RlVVJJQ29tcG9uZW50KGZyb20pfSZ0bz0ke2VuY29kZVVSSUNvbXBvbmVudCh0byl9YDtcclxuXHJcbiAgICByZXR1cm4gdXJsO1xyXG59XHJcblxyXG4vKipcclxuICogRmV0Y2hlcyByZXNwb25zZSBjb3VudCBmcm9tIEFJIEVtcGxveWVlIEFQSVxyXG4gKiBcclxuICogUmVxdWlyZW1lbnRzOiAyLjEsIDIuMiwgMi4zXHJcbiAqIFxyXG4gKiBAcGFyYW0gY29uZmlnIC0gQVBJIGNsaWVudCBjb25maWd1cmF0aW9uXHJcbiAqIEBwYXJhbSB0aW1lV2luZG93IC0gVGltZSB3aW5kb3cgZnJvbSBTUVMgbWVzc2FnZVxyXG4gKiBAcmV0dXJucyBBUEkgcmVzcG9uc2Ugd2l0aCBmcm9tLCB0bywgYW5kIGNvdW50XHJcbiAqIEB0aHJvd3MgRXJyb3IgaWYgQVBJIGNhbGwgZmFpbHMgb3IgcmV0dXJucyBpbnZhbGlkIHJlc3BvbnNlXHJcbiAqL1xyXG5leHBvcnQgYXN5bmMgZnVuY3Rpb24gZmV0Y2hSZXNwb25zZUNvdW50KFxyXG4gICAgY29uZmlnOiBBcGlDbGllbnRDb25maWcsXHJcbiAgICB0aW1lV2luZG93OiBTY2hlZHVsZU1lc3NhZ2VcclxuKTogUHJvbWlzZTxBcGlSZXNwb25zZT4ge1xyXG4gICAgY29uc3QgdXJsID0gYnVpbGRBcGlVcmwoY29uZmlnLmJhc2VVcmwsIHRpbWVXaW5kb3cuZnJvbSwgdGltZVdpbmRvdy50byk7XHJcblxyXG4gICAgY29uc29sZS5sb2coJ0NhbGxpbmcgQUkgRW1wbG95ZWUgQVBJJywgeyB1cmwsIGZyb206IHRpbWVXaW5kb3cuZnJvbSwgdG86IHRpbWVXaW5kb3cudG8gfSk7XHJcblxyXG4gICAgdHJ5IHtcclxuICAgICAgICBjb25zdCByZXNwb25zZSA9IGF3YWl0IGZldGNoKHVybCk7XHJcblxyXG4gICAgICAgIGlmICghcmVzcG9uc2Uub2spIHtcclxuICAgICAgICAgICAgdGhyb3cgbmV3IEVycm9yKGBBUEkgcmV0dXJuZWQgc3RhdHVzICR7cmVzcG9uc2Uuc3RhdHVzfTogJHtyZXNwb25zZS5zdGF0dXNUZXh0fWApO1xyXG4gICAgICAgIH1cclxuXHJcbiAgICAgICAgY29uc3QgZGF0YSA9IGF3YWl0IHJlc3BvbnNlLmpzb24oKSBhcyBBcGlSZXNwb25zZTtcclxuXHJcbiAgICAgICAgLy8gVmFsaWRhdGUgcmVzcG9uc2Ugc3RydWN0dXJlIChSZXF1aXJlbWVudCAyLjMpXHJcbiAgICAgICAgaWYgKCFkYXRhLmZyb20gfHwgIWRhdGEudG8gfHwgdHlwZW9mIGRhdGEuY291bnQgIT09ICdudW1iZXInKSB7XHJcbiAgICAgICAgICAgIHRocm93IG5ldyBFcnJvcignSW52YWxpZCBBUEkgcmVzcG9uc2Ugc3RydWN0dXJlOiBtaXNzaW5nIGZyb20sIHRvLCBvciBjb3VudCBmaWVsZHMnKTtcclxuICAgICAgICB9XHJcblxyXG4gICAgICAgIGNvbnNvbGUubG9nKCdBUEkgcmVzcG9uc2UgcmVjZWl2ZWQnLCB7IGZyb206IGRhdGEuZnJvbSwgdG86IGRhdGEudG8sIGNvdW50OiBkYXRhLmNvdW50IH0pO1xyXG5cclxuICAgICAgICByZXR1cm4gZGF0YTtcclxuICAgIH0gY2F0Y2ggKGVycm9yKSB7XHJcbiAgICAgICAgLy8gUmVxdWlyZW1lbnQgNy4xOiBMb2cgZXJyb3IgZGV0YWlscyBhbmQgcmUtdGhyb3dcclxuICAgICAgICBjb25zb2xlLmVycm9yKCdGYWlsZWQgdG8gZmV0Y2ggcmVzcG9uc2UgY291bnQgZnJvbSBBUEknLCB7XHJcbiAgICAgICAgICAgIHVybCxcclxuICAgICAgICAgICAgZnJvbTogdGltZVdpbmRvdy5mcm9tLFxyXG4gICAgICAgICAgICB0bzogdGltZVdpbmRvdy50byxcclxuICAgICAgICAgICAgZXJyb3I6IGVycm9yIGluc3RhbmNlb2YgRXJyb3IgPyBlcnJvci5tZXNzYWdlIDogU3RyaW5nKGVycm9yKSxcclxuICAgICAgICB9KTtcclxuXHJcbiAgICAgICAgdGhyb3cgZXJyb3I7XHJcbiAgICB9XHJcbn1cclxuIl19

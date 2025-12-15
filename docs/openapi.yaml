@@ -1,0 +1,285 @@
+openapi: 3.0.3
+info:
+  title: AI社員 モックAPI
+  description: |
+    データ収集スケジューラのテスト用モックAPI。
+    指定された時間枠のAI社員レスポンス数を返します。
+
+    ## 特徴
+    - 決定論的なレスポンス（同じ時刻には常に同じ値）
+    - 営業時間パターンのシミュレーション
+    - ISO8601形式のタイムスタンプ対応
+
+  version: 1.0.0
+  contact:
+    name: API サポート
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://n45ds51yrb.execute-api.ap-northeast-1.amazonaws.com/prod
+    description: 本番環境（AWS API Gateway）
+  - url: http://localhost:3000
+    description: ローカル開発環境
+
+tags:
+  - name: メトリクス
+    description: AI社員のレスポンス数取得
+  - name: ヘルスチェック
+    description: APIの稼働状態確認
+
+paths:
+  /response_count:
+    get:
+      tags:
+        - メトリクス
+      summary: レスポンス数取得
+      description: |
+        指定された時間枠（from～to）におけるAI社員のレスポンス数を取得します。
+
+        ## カウント計算ロジック
+        レスポンス数は以下の決定論的な式で計算されます：
+
+        ```
+        hour = toDate.getUTCHours()
+        minute = toDate.getUTCMinutes()
+        second = toDate.getUTCSeconds()
+
+        baseCount = (9 <= hour <= 17) ? 50 : 20  // 営業時間判定
+        variation = (hour * 7 + minute * 3 + second) % 40
+        count = min(100, max(0, baseCount + variation - 20))
+        ```
+
+        ## 営業時間パターン
+        - **営業時間中（9:00-17:59 UTC）**: 30-70程度の高めの値
+        - **営業時間外（夜間・早朝）**: 0-40程度の低めの値
+
+      operationId: getResponseCount
+      parameters:
+        - name: from
+          in: query
+          description: |
+            時間枠の開始時刻（ISO8601形式）
+
+            **形式**: `YYYY-MM-DDTHH:mm:ssZ`
+
+            **例**: `2025-12-03T10:23:00Z`
+          required: true
+          schema:
+            type: string
+            format: date-time
+            example: "2025-12-03T10:23:00Z"
+
+        - name: to
+          in: query
+          description: |
+            時間枠の終了時刻（ISO8601形式）
+
+            **形式**: `YYYY-MM-DDTHH:mm:ssZ`
+
+            **例**: `2025-12-03T10:23:05Z`
+
+            **注意**: `to`の時刻がカウント計算に使用されます
+          required: true
+          schema:
+            type: string
+            format: date-time
+            example: "2025-12-03T10:23:05Z"
+
+      responses:
+        "200":
+          description: 成功レスポンス
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseCountSuccess"
+              examples:
+                営業時間中:
+                  summary: 営業時間中（高めの値）
+                  value:
+                    from: "2025-12-03T10:23:00Z"
+                    to: "2025-12-03T10:23:05Z"
+                    count: 65
+                営業時間外:
+                  summary: 営業時間外（低めの値）
+                  value:
+                    from: "2025-12-03T02:56:00Z"
+                    to: "2025-12-03T02:56:05Z"
+                    count: 15
+                最小値:
+                  summary: 最小値（0）
+                  value:
+                    from: "2025-12-03T00:00:00Z"
+                    to: "2025-12-03T00:00:05Z"
+                    count: 0
+                最大値:
+                  summary: 最大値（100）
+                  value:
+                    from: "2025-12-03T15:30:00Z"
+                    to: "2025-12-03T15:30:05Z"
+                    count: 100
+
+        "400":
+          description: |
+            リクエストエラー
+
+            以下の場合に発生：
+            - `from`または`to`パラメータが欠落
+            - ISO8601形式が無効
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                パラメータ欠落:
+                  summary: 必須パラメータが欠落
+                  value:
+                    error: "Missing required query parameters: from and to"
+                無効な日付形式:
+                  summary: ISO8601形式が無効
+                  value:
+                    error: "Invalid ISO8601 format for from or to parameter"
+
+        "500":
+          description: サーバーエラー
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              example:
+                error: "Internal server error"
+
+  /health:
+    get:
+      tags:
+        - ヘルスチェック
+      summary: ヘルスチェック
+      description: |
+        APIの稼働状態を確認します。
+
+        このエンドポイントは監視システムやロードバランサーから
+        定期的に呼び出されることを想定しています。
+      operationId: healthCheck
+      responses:
+        "200":
+          description: API稼働中
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              example:
+                status: "ok"
+
+components:
+  schemas:
+    ResponseCountSuccess:
+      type: object
+      description: レスポンス数取得の成功レスポンス
+      required:
+        - from
+        - to
+        - count
+      properties:
+        from:
+          type: string
+          format: date-time
+          description: |
+            時間枠の開始時刻（リクエストと同じ値）
+
+            ISO8601形式: `YYYY-MM-DDTHH:mm:ssZ`
+          example: "2025-12-03T10:23:00Z"
+
+        to:
+          type: string
+          format: date-time
+          description: |
+            時間枠の終了時刻（リクエストと同じ値）
+
+            ISO8601形式: `YYYY-MM-DDTHH:mm:ssZ`
+          example: "2025-12-03T10:23:05Z"
+
+        count:
+          type: integer
+          format: int32
+          minimum: 0
+          maximum: 100
+          description: |
+            指定時間枠のレスポンス数
+
+            - **最小値**: 0
+            - **最大値**: 100
+            - **決定論的**: 同じ時刻には常に同じ値
+          example: 65
+
+      example:
+        from: "2025-12-03T10:23:00Z"
+        to: "2025-12-03T10:23:05Z"
+        count: 65
+
+    ErrorResponse:
+      type: object
+      description: エラーレスポンス
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: エラーメッセージ（日本語または英語）
+          example: "Missing required query parameters: from and to"
+
+      example:
+        error: "Missing required query parameters: from and to"
+
+    HealthResponse:
+      type: object
+      description: ヘルスチェックレスポンス
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - ok
+          description: |
+            APIの稼働状態
+
+            - `ok`: 正常稼働中
+          example: "ok"
+
+      example:
+        status: "ok"
+
+  examples:
+    ResponseCount営業時間中:
+      summary: 営業時間中のレスポンス
+      description: 9:00-17:59 UTCの時間帯は高めの値を返します
+      value:
+        from: "2025-12-03T10:23:00Z"
+        to: "2025-12-03T10:23:05Z"
+        count: 65
+
+    ResponseCount営業時間外:
+      summary: 営業時間外のレスポンス
+      description: 夜間・早朝は低めの値を返します
+      value:
+        from: "2025-12-03T02:56:00Z"
+        to: "2025-12-03T02:56:05Z"
+        count: 15
+
+    ErrorMissingParams:
+      summary: パラメータ欠落エラー
+      value:
+        error: "Missing required query parameters: from and to"
+
+    ErrorInvalidFormat:
+      summary: 無効な日付形式エラー
+      value:
+        error: "Invalid ISO8601 format for from or to parameter"
+
+security: []
+
+externalDocs:
+  description: システムアーキテクチャドキュメント
+  url: ./architecture.md
